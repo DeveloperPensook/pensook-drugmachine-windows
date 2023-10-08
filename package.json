@@ -1,0 +1,40 @@
+{
+  "name": "pensook-api",
+  "version": "1.0.0",
+  "description": "Pensook API Server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeveloperPensook/pensook-API.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeveloperPensook/pensook-API/issues"
+  },
+  "homepage": "https://github.com/DeveloperPensook/pensook-API#readme",
+  "devDependencies": {
+    "dotenv": "^16.3.1",
+    "nodemon": "^3.0.1"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "file-type": "^18.5.0",
+    "helmet": "^7.0.0",
+    "jsonwebtoken": "^9.0.1",
+    "modbus-serial": "^8.0.13",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.4",
+    "pg": "^8.11.3",
+    "socket.io": "^4.7.2"
+  }
+}
