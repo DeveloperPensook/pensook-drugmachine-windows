@@ -6,6 +6,7 @@ const port = 3012;
 
 async function drugMachineModbus(req) {
     try {
+        // start writeRegistersSequentially section 
         const { ip, port: modbusPort, slaveId, address, value, drugMachineCode, stockLedgerEntryId, drugMachineOpenHistoryId, entryStatusAddress } = req.body;
         let resMessage = [];
         let registers = [];
@@ -24,7 +25,9 @@ async function drugMachineModbus(req) {
 
                 function writeNextRegister() {
                     if (registers.length === 0) {
-                        resolve();
+                        client.close(() => {
+                            resolve(); // Resolve when all registers are written and the client is closed
+                        });
                         return;
                     }
 
@@ -45,6 +48,7 @@ async function drugMachineModbus(req) {
                 writeNextRegister();
 
                 client.on("close", () => {
+                    // The client has been closed, resolve the promise here as well
                     resolve();
                 });
 
@@ -55,8 +59,12 @@ async function drugMachineModbus(req) {
         }
 
         await writeRegistersSequentially(ip, modbusPort, slaveId, registers);
+        // end writeRegistersSequentially section 
 
+        // start readAndCheckRegisters section
         const client = new ModbusRTU();
+
+        let length = 1
         const readAndCheckRegisters = () => {
             client.readHoldingRegisters(slaveId, entryStatusAddress, length, (err, data) => {
                 if (err) {
@@ -64,16 +72,17 @@ async function drugMachineModbus(req) {
                 } else {
                     console.log("Holding registers:", data.data);
                     if (data.data === "2" || data.data === "3") {
+                        clearInterval(interval); // Stop the interval
                         client.close(() => {
                             let message;
                             if (stockLedgerEntryId) {
                                 message = {
                                     stockLedgerEntryId: stockLedgerEntryId
-                                }
+                                };
                             } else {
                                 message = {
                                     drugMachineOpenHistoryId: drugMachineOpenHistoryId
-                                }
+                                };
                             }
 
                             const io = req.app.get("socketio");
@@ -86,23 +95,16 @@ async function drugMachineModbus(req) {
                             res.json({ success: true, data: data });
                             console.log("Connection closed");
                         });
-                    } else {
-                        setTimeout(readAndCheckRegisters, 1000);
                     }
                 }
             });
         };
-        client.connectTCP(ip, { port: port })
-            .then(() => {
-                console.log("Connected successfully");
-                // Start the reading and checking process
-                readAndCheckRegisters();
-            })
-            .catch((connectErr) => {
-                console.error("Error connecting to Modbus device:", connectErr);
-            });
 
+        await client.connectTCP(ip, { port: port });
+        console.log("Connected successfully");
 
+        // Start the reading and checking process
+        const interval = setInterval(readAndCheckRegisters, 1000);
 
         res.json({ success: true, data: resMessage });
     } catch (error) {
