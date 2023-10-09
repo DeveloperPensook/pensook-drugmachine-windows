@@ -28,7 +28,7 @@ async function drugMachineModbus(req) {
 }
 
 async function getStatusModbus(req) {
-    const { ip, modbusPort, slaveId, address, length } = req.body;
+    const { ip, modbusPort, slaveId, address, length, entryType } = req.body;
 
   try {
     const client = new ModbusRTU();
@@ -50,6 +50,7 @@ async function getStatusModbus(req) {
                 address: [address],
                 value: [0]
             }})
+            return { success: true }
         }
     } else {
         if (data.data[0] == 0) {
@@ -60,16 +61,12 @@ async function getStatusModbus(req) {
                 address: [address],
                 value: [0]
             }})
-            return { sucess: true, result: {
-                stockLedgerEntryId: stockLedgerEntryId,
-                drugMachineOpenHistoryId: drugMachineOpenHistoryId,
-            }}
+            return { success: true }
         }
     }
-    res.json({ success: true, data: data.data[0] });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ success: false, error: error.message });
+    return { success: false };
+  } catch (error) { 
+    return error
   }
 }
 
