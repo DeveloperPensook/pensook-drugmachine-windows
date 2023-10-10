@@ -43,7 +43,7 @@ async function drugMachineModbus(req) {
         // Sleep for 1 second before the next attempt
         await new Promise(resolve => setTimeout(resolve, interval));
     }
-
+    await client.close();
     return result;
 }
 
