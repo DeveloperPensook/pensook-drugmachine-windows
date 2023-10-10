@@ -30,6 +30,10 @@ async function drugMachineModbus(req) {
             console.log("Data received:" , data.data[0]); // Debug statement
             if (data.data[0] === expectResult) {
                 try {
+                    if (entryType != 'Pickup Medicine') {
+                        await client.writeRegisters(getStatusAddress, [address[0]]);
+                        console.log("Write successful");
+                    }
                     await client.writeRegisters(getStatusAddress, [0]);
                     console.log("Write successful"); // Debug statement
                     result = { success: true };
