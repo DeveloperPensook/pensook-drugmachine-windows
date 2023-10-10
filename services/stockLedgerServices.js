@@ -22,7 +22,9 @@ async function drugMachineModbus(req) {
     const interval = 1000; // 1 second interval
 
     const startTime = Date.now();
-    while (Date.now() - startTime < timeout) {
+    let conditionMet = false; // Flag to track whether the condition has been met
+
+    while (!conditionMet && Date.now() - startTime < timeout) {
         try {
             const data = await client.readHoldingRegisters(getStatusAddress, length);
             console.log("Data received:", data.data[0]); // Debug statement
@@ -34,9 +36,8 @@ async function drugMachineModbus(req) {
                 } catch (err) {
                     console.error("Write error:", err); // Debug statement
                 }
-                break;
+                conditionMet = true; // Set the flag to true when the condition is met
             }
-            break;
         } catch (modbusError) {
             console.error("Modbus Error:", modbusError); // Debug statement
         }
