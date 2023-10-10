@@ -40,7 +40,7 @@ async function drugMachineModbus(req) {
                 if (Date.now() - startTime < 60000) {
                     setTimeout(readHoldingRegistersWithTimeout, 1000);
                 } else {
-                    throw new Error("Timeout");
+                    return { success: false };
                 }
             }
         } catch (error) {
