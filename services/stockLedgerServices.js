@@ -18,7 +18,7 @@ async function drugMachineModbus(req) {
     await client.setID(slaveId);
 
     let result = { success: false };
-    const timeout = 180000; // 10 seconds timeout
+    const timeout = entryType === 'Pickup Medicine' ? 180000 : 1200000;
     const interval = 1000; // 1 second interval
 
     const startTime = Date.now();
