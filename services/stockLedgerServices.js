@@ -15,9 +15,7 @@ async function drugMachineModbus(req) {
     const getStatusAddress = entryType === 'Pickup Medicine' ? entryStatusAddress : doorStatusAddress;
     const expectResult = entryType === 'Pickup Medicine' ? 1 : 0;
 
-    const client2 = new ModbusRTU();
-    await client2.connectTCP(ip, { port: modbusPort });
-    await client2.setID(slaveId);
+    await client.setID(slaveId);
 
     let result = { success: false };
     const timeout = 10000; // 10 seconds timeout
@@ -26,11 +24,11 @@ async function drugMachineModbus(req) {
     const startTime = Date.now();
     while (Date.now() - startTime < timeout) {
         try {
-            const data = await client2.readHoldingRegisters(getStatusAddress, length);
+            const data = await client.readHoldingRegisters(getStatusAddress, length);
             console.log("Data received:", data.data[0]); // Debug statement
             if (data.data[0] === expectResult) {
                 try {
-                    await client2.writeRegisters(getStatusAddress, [0]);
+                    await client.writeRegisters(getStatusAddress, [0]);
                     console.log("Write successful"); // Debug statement
                     result = { success: true };
                 } catch (err) {
@@ -45,9 +43,6 @@ async function drugMachineModbus(req) {
         // Sleep for 1 second before the next attempt
         await new Promise(resolve => setTimeout(resolve, interval));
     }
-
-    // Close the client2 connection when you're done with it
-    await client2.close();
 
     return result;
 }
