@@ -12,6 +12,7 @@ async function drugMachineModbus(req) {
         }
     }
 
+    const length = 1;
     if (entryType != 'Pickup Medicine') {
         const timeout = 80000;
         const interval = 1000; // 1 second interval
@@ -34,7 +35,6 @@ async function drugMachineModbus(req) {
         }
     }
 
-    const length = 1;
     const getStatusAddress = entryType === 'Pickup Medicine' ? entryStatusAddress : doorStatusAddress;
     const expectResult = entryType === 'Pickup Medicine' ? 1 : 0;
 
