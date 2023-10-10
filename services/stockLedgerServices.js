@@ -11,6 +11,29 @@ async function drugMachineModbus(req) {
             return { success: false };
         }
     }
+
+    if (entryType != 'Pickup Medicine') {
+        const timeout = 80000;
+        const interval = 1000; // 1 second interval
+    
+        const startTime = Date.now();
+        let conditionMet = false; // Flag to track whether the condition has been met
+    
+        while (!conditionMet && Date.now() - startTime < timeout) {
+            try {
+                let data = await client.readHoldingRegisters([address[0]], length);
+                console.log("Data received:" , data.data[0]); // Debug statement
+                if (data.data[0] === 0) {
+                    conditionMet = true; // Set the flag to true when the condition is met
+                }
+            } catch (modbusError) {
+                console.error("Modbus Error:", modbusError); // Debug statement
+            }
+            // Sleep for 1 second before the next attempt
+            await new Promise(resolve => setTimeout(resolve, interval));
+        }
+    }
+
     const length = 1;
     const getStatusAddress = entryType === 'Pickup Medicine' ? entryStatusAddress : doorStatusAddress;
     const expectResult = entryType === 'Pickup Medicine' ? 1 : 0;
@@ -30,10 +53,6 @@ async function drugMachineModbus(req) {
             console.log("Data received:" , data.data[0]); // Debug statement
             if (data.data[0] === expectResult) {
                 try {
-                    if (entryType != 'Pickup Medicine') {
-                        await client.writeRegisters(getStatusAddress, [address[0]]);
-                        console.log("Write successful");
-                    }
                     await client.writeRegisters(getStatusAddress, [0]);
                     console.log("Write successful"); // Debug statement
                     result = { success: true };
