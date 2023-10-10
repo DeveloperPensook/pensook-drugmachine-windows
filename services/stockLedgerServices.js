@@ -18,7 +18,7 @@ async function drugMachineModbus(req) {
     await client.setID(slaveId);
 
     let result = { success: false };
-    const timeout = 10000; // 10 seconds timeout
+    const timeout = 180000; // 10 seconds timeout
     const interval = 1000; // 1 second interval
 
     const startTime = Date.now();
@@ -26,8 +26,8 @@ async function drugMachineModbus(req) {
 
     while (!conditionMet && Date.now() - startTime < timeout) {
         try {
-            const data = await client.readHoldingRegisters(getStatusAddress, length);
-            console.log("Data received:", data.data[0]); // Debug statement
+            let data = await client.readHoldingRegisters(getStatusAddress, length);
+            console.log("Data received:" , data.data[0]); // Debug statement
             if (data.data[0] === expectResult) {
                 try {
                     await client.writeRegisters(getStatusAddress, [0]);
