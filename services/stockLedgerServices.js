@@ -45,7 +45,7 @@ async function drugMachineModbus(req) {
                     return { success: true };
                 } else {
                     // If result is not as expected, force a repeated read every 1 second for up to 10 seconds
-                    if (Date.now() - startTime < 10000) {
+                    if (Date.now() - startTime < 60000) {
                         setTimeout(readHoldingRegistersWithTimeout, 1000);
                     } else {
                         throw new Error("Timeout");
@@ -57,9 +57,7 @@ async function drugMachineModbus(req) {
         }
 
         const startTime = Date.now();
-        await readHoldingRegistersWithTimeout();
-
-        return { success: true };
+        return (await readHoldingRegistersWithTimeout());
     } catch (error) {
         return { success: false, error: error.message };
     }
