@@ -1,3 +1,5 @@
+const ModbusRTU = require("modbus-serial");
+
 async function drugMachineModbus(req) {
     const { ip, port: modbusPort, slaveId, address, value, entryType, entryStatusAddress, doorStatusAddress } = req.body;
     const client = new ModbusRTU();
@@ -10,12 +12,10 @@ async function drugMachineModbus(req) {
                 await client.writeRegisters(address[i], [value[i]]);
             } catch (err) {
                 console.error(`Error writing register ${address[i]}:`, err);
+                isPassed = false;
             }
         }
-    } catch (error) {
-        return { success: false, error: error.message };
-    } finally {
-        await client.close();
+
         const length = 1;
         const getStatusAddress = entryType === 'Pickup Medicine' ? entryStatusAddress : doorStatusAddress;
         const expectResult = entryType === 'Pickup Medicine' ? 1 : 0;
@@ -43,13 +43,17 @@ async function drugMachineModbus(req) {
                     }
                 }
             } catch (error) {
-                return { success: false, error: error.message };
+                throw error;
             }
         }
 
         const startTime = Date.now();
-        return (await readHoldingRegistersWithTimeout());
-    } 
+        return await readHoldingRegistersWithTimeout();
+    } catch (error) {
+        return { success: false, error: error.message };
+    } finally {
+        await client.close();
+    }
 }
 
 async function updateToZero(ip, modbusPort, address, value) {
@@ -57,12 +61,11 @@ async function updateToZero(ip, modbusPort, address, value) {
     try {
         await client.connectTCP(ip, { port: modbusPort });
         await client.writeRegisters(address, [value]);
-        await client.close();
-        return {success: true}
+        return { success: true };
     } catch (error) {
         return { success: false, error: error.message };
     } finally {
-        return {success: true}
+        await client.close();
     }
 }
 
