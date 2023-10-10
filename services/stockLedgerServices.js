@@ -2,8 +2,8 @@ const express = require("express");
 const ModbusRTU = require("modbus-serial");
 
 async function drugMachineModbus(req) {
-    const { ip, port: modbusPort, slaveId, address, value } = req.body;
-  
+    const { ip, port: modbusPort, slaveId, address, value, entryType, entryStatusAddress, doorStatusAddress } = req.body;
+
     try {
         const client = new ModbusRTU();
         await client.connectTCP(ip, { port: modbusPort });
@@ -20,20 +20,53 @@ async function drugMachineModbus(req) {
                 isPassed = false;
             }
         }
-        
+
         await client.close();
-        if (isPassed) {
-            return { success: true };
-        } else {
-            return { success: false };
+
+        // after writeRegisters read status of register
+        const length = 1; // Assuming you want to read one holding register
+        const getStatusAddress = entryType === 'Pickup Medicine' ? entryStatusAddress : doorStatusAddress;
+        const expectResult = entryType === 'Pickup Medicine' ? 1 : 0;
+
+        const client2 = new ModbusRTU();
+        await client2.connectTCP(ip, { port: modbusPort });
+        await client2.setID(slaveId);
+
+        let result;
+
+        // Define a function to read holding registers with a timeout
+        async function readHoldingRegistersWithTimeout() {
+            try {
+                const data = await client2.readHoldingRegisters(getStatusAddress, length);
+                if (data.data[0]) {
+                    result = data.data[0];
+                }
+                if (result === expectResult) {
+                    return { success: true };
+                } else {
+                    // If result is not as expected, force a repeated read every 1 second for up to 10 seconds
+                    if (Date.now() - startTime < 10000) {
+                        setTimeout(readHoldingRegistersWithTimeout, 1000);
+                    } else {
+                        throw new Error("Timeout");
+                    }
+                }
+            } catch (error) {
+                throw error;
+            }
         }
+
+        const startTime = Date.now();
+        await readHoldingRegistersWithTimeout();
+
+        return { success: true };
     } catch (error) {
-        return { success: false, error: error.message }
+        return { success: false, error: error.message };
     }
 }
 
 async function getStatusModbus(req) {
-    const { ip, modbusPort, slaveId, address, length, entryType, entryStatusAddress } = req.body;
+    const { ip, modbusPort, slaveId, address, length, entryType, entryStatusAddress, doorStatusAddress } = req.body;
 
     try {
         const client = new ModbusRTU();
