@@ -26,18 +26,22 @@ async function drugMachineModbus(req) {
             const startTime = Date.now();
             while (true) {
                 const data = await client2.readHoldingRegisters(getStatusAddress, length);
+                console.log("Data received:", data.data[0]); // Debug statement
                 if (data.data[0] === expectResult) {
                     const client3 = new ModbusRTU();
                     await client3.connectTCP(ip, { port: modbusPort });
                     try {
                         await client3.writeRegisters(getStatusAddress, [0]);
+                        console.log("Write successful"); // Debug statement
                         return { success: true };
                     } catch (err) {
+                        console.error("Write error:", err); // Debug statement
                         return { success: false };
                     }
                 } else {
                     // Check for timeout and exit the loop if necessary
                     if (Date.now() - startTime >= 60000) {
+                        console.log("Timeout occurred"); // Debug statement
                         return { success: false };
                     }
                     // Sleep for 1 second before the next attempt
@@ -45,9 +49,10 @@ async function drugMachineModbus(req) {
                 }
             }
         } catch (error) {
+            console.error("Error:", error); // Debug statement
             throw error;
         }
-    }
+    }    
 
     return await readHoldingRegistersWithTimeout();
 }
