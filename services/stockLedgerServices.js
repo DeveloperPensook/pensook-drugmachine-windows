@@ -7,21 +7,26 @@ async function drugMachineModbus(req) {
     try {
         const client = new ModbusRTU();
         await client.connectTCP(ip, { port: modbusPort });
-      
+
         const resMessage = [];
-  
+        let isPassed = true;
+
         for (let i = 0; i < address.length; i++) {
-        try {
-            await client.writeRegisters(address[i], [value[i]]);
-            resMessage.push(`Register ${address[i]} written successfully.`);
+            try {
+                await client.writeRegisters(address[i], [value[i]]);
+                resMessage.push(`Register ${address[i]} written successfully.`);
             } catch (err) {
                 console.error(`Error writing register ${address[i]}:`, err);
+                isPassed = false;
             }
         }
-  
+        
         await client.close();
-  
-        return { success: true }
+        if (isPassed) {
+            return { success: true };
+        } else {
+            return { success: false };
+        }
     } catch (error) {
         return { success: false, error: error.message }
     }
