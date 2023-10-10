@@ -23,24 +23,25 @@ async function drugMachineModbus(req) {
 
     async function readHoldingRegistersWithTimeout() {
         try {
-            const data = await client2.readHoldingRegisters(getStatusAddress, length);
-            if (data.data[0]) {
-                result = data.data[0];
-            }
-            if (result === expectResult) {
-                const client3 = new ModbusRTU();
-                await client3.connectTCP(ip, { port: modbusPort });
-                try {
-                    await client3.writeRegisters(getStatusAddress, [0]);
-                    return { success: true };
-                } catch (err) {
-                    return { success: false };
-                }
-            } else {
-                if (Date.now() - startTime < 60000) {
-                    setTimeout(readHoldingRegistersWithTimeout, 1000);
+            const startTime = Date.now();
+            while (true) {
+                const data = await client2.readHoldingRegisters(getStatusAddress, length);
+                if (data.data[0] === expectResult) {
+                    const client3 = new ModbusRTU();
+                    await client3.connectTCP(ip, { port: modbusPort });
+                    try {
+                        await client3.writeRegisters(getStatusAddress, [0]);
+                        return { success: true };
+                    } catch (err) {
+                        return { success: false };
+                    }
                 } else {
-                    return { success: false };
+                    // Check for timeout and exit the loop if necessary
+                    if (Date.now() - startTime >= 60000) {
+                        return { success: false };
+                    }
+                    // Sleep for 1 second before the next attempt
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
         } catch (error) {
@@ -48,7 +49,6 @@ async function drugMachineModbus(req) {
         }
     }
 
-    const startTime = Date.now();
     return await readHoldingRegistersWithTimeout();
 }
 
