@@ -46,6 +46,10 @@ async function drugMachineModbus(req) {
         await new Promise(resolve => setTimeout(resolve, interval));
     }
     await client.close();
+    if (!conditionMet) {
+        console.error("Timeout reached");
+        result = { success: false };
+    }
     return result;
 }
 
