@@ -42,9 +42,8 @@ async function drugMachineModbus(req) {
                     result = data.data[0];
                 }
                 if (result === expectResult) {
-                    await updateToZero(ip, modbusPort, slaveId, [getStatusAddress], [0])
-                    return { success: true };
-                    
+                    let returnData = await updateToZero(ip, modbusPort, slaveId, [getStatusAddress], [0])
+                    return returnData
                 } else {
                     // If result is not as expected, force a repeated read every 1 second for up to 10 seconds
                     if (Date.now() - startTime < 60000) {
@@ -77,6 +76,7 @@ async function updateToZero(ip, modbusPort, slaveId, address, value) {
             try {
                 await client.writeRegisters(address[i], [value[i]]);
                 resMessage.push(`Register ${address[i]} written successfully.`);
+                return {success: true}
             } catch (err) {
                 console.error(`Error writing register ${address[i]}:`, err);
                 isPassed = false;
@@ -84,6 +84,7 @@ async function updateToZero(ip, modbusPort, slaveId, address, value) {
         }
 
         await client.close();
+        return {success: true}
     } catch (error) {
         return { success: false, error: error.message };
     }
