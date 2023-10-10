@@ -36,6 +36,7 @@ async function drugMachineModbus(req) {
                 }
                 break;
             }
+            break;
         } catch (modbusError) {
             console.error("Modbus Error:", modbusError); // Debug statement
         }
