@@ -19,47 +19,37 @@ async function drugMachineModbus(req) {
     await client2.connectTCP(ip, { port: modbusPort });
     await client2.setID(slaveId);
 
-    let result;
+    let result = { success: false };
+    const timeout = 10000; // 10 seconds timeout
+    const interval = 1000; // 1 second interval
 
-    async function readHoldingRegistersWithTimeout() {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeout) {
         try {
-            const startTime = Date.now();
-            while (true) {
+            const data = await client2.readHoldingRegisters(getStatusAddress, length);
+            console.log("Data received:", data.data[0]); // Debug statement
+            if (data.data[0] === expectResult) {
                 try {
-                    const data = await client2.readHoldingRegisters(getStatusAddress, length);
-                    console.log("Data received:", data.data[0]); // Debug statement
-                    if (data.data[0] === expectResult) {
-                        const client3 = new ModbusRTU();
-                        await client3.connectTCP(ip, { port: modbusPort });
-                        try {
-                            await client3.writeRegisters(getStatusAddress, [0]);
-                            console.log("Write successful"); // Debug statement
-                            return { success: true };
-                        } catch (err) {
-                            console.error("Write error:", err); // Debug statement
-                            return { success: false };
-                        }
-                    }
-                } catch (modbusError) {
-                    console.error("Modbus Error:", modbusError); // Debug statement
+                    await client2.writeRegisters(getStatusAddress, [0]);
+                    console.log("Write successful"); // Debug statement
+                    result = { success: true };
+                } catch (err) {
+                    console.error("Write error:", err); // Debug statement
                 }
-    
-                // Check for timeout and exit the loop if necessary
-                if (Date.now() - startTime >= 60000) {
-                    console.log("Timeout occurred"); // Debug statement
-                    return { success: false };
-                }
-    
-                // Sleep for 1 second before the next attempt
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                break;
             }
-        } catch (error) {
-            console.error("Error:", error); // Debug statement
-            throw error;
+        } catch (modbusError) {
+            console.error("Modbus Error:", modbusError); // Debug statement
         }
+
+        // Sleep for 1 second before the next attempt
+        await new Promise(resolve => setTimeout(resolve, interval));
     }
-    
-    return await readHoldingRegistersWithTimeout();
+
+    // Close the client2 connection when you're done with it
+    await client2.close();
+
+    return result;
 }
 
 module.exports = {
