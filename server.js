@@ -33,7 +33,7 @@ app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.json());
 
-app.use('/api/stockLedger/', stockLedgerRoutes)
+app.use('/api/', stockLedgerRoutes)
 
 const port = process.env.API_SERVER_PORT || 6007;
 
